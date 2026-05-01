@@ -9,16 +9,16 @@ headers = {
 }
 
 def p_paste(message, extension="txt"):
-    siteurl = "https://pasty.lus.pm/api/v1/pastes"
+    siteurl = "https://paste.kaizoku.cyou/api/v1/pastes"
     data = {"content": message}
     try:
         response = requests.post(url=siteurl, data=json.dumps(data), headers=headers)
         if response.ok:
             resp_json = response.json()
-            purl = f"https://pasty.lus.pm/{resp_json['id']}.{extension}"
+            purl = f"https://paste.kaizoku.cyou/{resp_json['id']}.{extension}"
             return {
                 "url": purl,
-                "raw": f"https://pasty.lus.pm/{resp_json['id']}/raw",
+                "raw": f"https://paste.kaizoku.cyou/{resp_json['id']}/raw",
                 "status": True
             }
         return {"status": False, "error": "Unable to reach pasty.lus.pm"}
@@ -37,7 +37,7 @@ async def paste_handler(client, message):
     elif message.reply_to_message:
         if message.reply_to_message.document:
             if message.reply_to_message.document.file_size > 1048576:
-                return await status_msg.edit("❌ הקובץ גדול מדי (מקסימום 1MB).")
+                return await status_msg.edit("✘ הקובץ גדול מדי (מקסימום 1MB).")
             
             await status_msg.edit("⏳ **מוריד קובץ...**")
             try:
@@ -46,17 +46,17 @@ async def paste_handler(client, message):
                     content = f.read()
                 os.remove(file_path)
             except Exception as e:
-                return await status_msg.edit(f"❌ שגיאה בקריאת הקובץ: {e}")
+                return await status_msg.edit(f"✘ שגיאה בקריאת הקובץ: {e}")
         
         elif message.reply_to_message.text or message.reply_to_message.caption:
             content = message.reply_to_message.text or message.reply_to_message.caption
 
     if not content:
-        return await status_msg.edit("❌ **לא נמצא תוכן.**\nהגב על הודעת טקסט/קובץ או כתוב את הטקסט ליד הפקודה.")
+        return await status_msg.edit("✘ **לא נמצא תוכן.**\nהגב על הודעת טקסט/קובץ או כתוב את הטקסט ליד הפקודה.")
 
     await status_msg.edit("📤 **מעלה ל-Pastebin...**")
     
-    ext = "py" 
+    ext = "" 
     if message.reply_to_message and message.reply_to_message.document:
         try: ext = message.reply_to_message.document.file_name.split(".")[-1]
         except: pass
@@ -68,10 +68,10 @@ async def paste_handler(client, message):
         p_raw = result["raw"]
         
         text = (
-            "✅ **הועלה בהצלחה ל-Pasty**\n\n"
-            f"🔗 **קישור:** [לחץ כאן]({p_link})\n"
-            f"📄 **קישור RAW:** [לחץ כאן]({p_raw})"
+            "**[✓] הועלה בהצלחה ל-Pasty**\n\n"
+            f"**➲ Link:**\n<blockquote>{p_link}</blockquote>\n\n"
+            f"**➲ RAW:**\n<blockquote>{p_raw}.</blockquote>"
         )
         await status_msg.edit(text, disable_web_page_preview=True)
     else:
-        await status_msg.edit(f"❌ שגיאה בהעלאה: {result['error']}")
+        await status_msg.edit(f"✘ שגיאה בהעלאה: {result['error']}")
