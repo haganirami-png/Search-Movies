@@ -1,22 +1,11 @@
-import os
-from dotenv import load_dotenv
+from os import environ
 
-load_dotenv()
-
-API_ID = int(os.environ.get("API_ID", "0"))
-API_HASH = os.environ.get("API_HASH", "")
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-
-MONGO_URI = os.environ.get("MONGO_URI", "")
-DB_NAME = "TjBotDB"
-
-# מנהלים: ניתן להוסיף כמה מנהלים מופרדים ברווח או פסיק
-ADMINS = [int(x) for x in os.environ.get("ADMINS", "").replace(",", " ").split()]
-
-LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "0"))
-UPDATE_CHANNEL = "searchgram_bots"
-REQUEST_GROUP = "https://t.me/searchgram_group"
-
-PHOTO_URL = "https://i.ibb.co/BK2j0c7p/x.jpg"
-
-AUTH_CHANNEL_FORCE = os.environ.get("AUTH_CHANNEL_FORCE", "False").lower() == "true"
+API_ID   = int(environ.get("API_ID", 0))
+API_HASH = environ.get("API_HASH", "")
+BOT_TOKEN = environ.get("BOT_TOKEN", "")
+ADMINS   = list(map(int, environ.get("ADMINS", "0").split()))
+LOG_CHANNEL  = int(environ.get("LOG_CHANNEL", 0))
+UPDATE_CHANNEL = environ.get("UPDATE_CHANNEL", "")
+REQUEST_GROUP  = environ.get("REQUEST_GROUP", "")
+PHOTO_URL      = environ.get("PHOTO_URL", "")
+AUTH_CHANNEL_FORCE = environ.get("AUTH_CHANNEL_FORCE", "False") == "True"
