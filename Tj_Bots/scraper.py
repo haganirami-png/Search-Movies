@@ -112,13 +112,14 @@ async def scrape_title(client, userbot, title):
             break
 
         for btn in buttons:
-            if not _get_btn_data(btn):
-                continue
             btn_data = _get_btn_data(btn)
+            if not btn_data:
+                continue
             if btn_data in ("noop",) or btn_data.startswith("search#"):
                 continue
             try:
-                await bot_msg.click(btn_data)
+                # שלח את הטקסט של הכפתור כהודעה
+                await userbot.send_message(SOURCE_BOT, btn_data)
                 await asyncio.sleep(3)
 
                 video_msg = None
@@ -138,7 +139,7 @@ async def scrape_title(client, userbot, title):
         next_btn = _find_next_page(bot_msg.reply_markup, page)
         if not next_btn:
             break
-        await bot_msg.click(_get_btn_data(next_btn))
+        await userbot.send_message(SOURCE_BOT, _get_btn_data(next_btn))
         await asyncio.sleep(3)
         page += 1
 
@@ -161,7 +162,6 @@ async def _save_and_forward(client, video_msg):
         await forward_file_to_channel(client, db, file_data)
 
 def _get_btn_data(btn):
-    """מחזיר callback_data או טקסט של כפתור."""
     if hasattr(btn, 'callback_data') and btn.callback_data:
         return btn.callback_data
     if hasattr(btn, 'text') and btn.text:
