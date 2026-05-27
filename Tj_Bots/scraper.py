@@ -96,34 +96,52 @@ async def scrape_title(client, userbot, title):
     page = 1
     while True:
         await userbot.send_message(SOURCE_BOT, title)
-        await asyncio.sleep(3)
-        messages = await userbot.get_history(SOURCE_BOT, limit=1)
-        if not messages: break
-        bot_msg = messages[0]
-        if not bot_msg.reply_markup: break
+        await asyncio.sleep(5)
+
+        bot_msg = None
+        async for msg in userbot.get_chat_history(SOURCE_BOT, limit=5):
+            if msg.reply_markup:
+                bot_msg = msg
+                break
+
+        if not bot_msg or not bot_msg.reply_markup:
+            break
+
         buttons = _extract_buttons(bot_msg.reply_markup)
-        if not buttons: break
+        if not buttons:
+            break
+
         for btn in buttons:
-            if not btn.callback_data or btn.callback_data in ("noop",): continue
-            if btn.callback_data.startswith("search#"): continue
+            if not _get_btn_data(btn):
+                continue
+            btn_data = _get_btn_data(btn)
+            if btn_data in ("noop",) or btn_data.startswith("search#"):
+                continue
             try:
-                await bot_msg.click(btn.callback_data)
-                await asyncio.sleep(2)
-                new_msgs = await userbot.get_history(SOURCE_BOT, limit=1)
-                if not new_msgs: continue
-                video_msg = new_msgs[0]
-                if video_msg.video:
+                await bot_msg.click(btn_data)
+                await asyncio.sleep(3)
+
+                video_msg = None
+                async for msg in userbot.get_chat_history(SOURCE_BOT, limit=3):
+                    if msg.video:
+                        video_msg = msg
+                        break
+
+                if video_msg:
                     await _save_and_forward(client, video_msg)
                     pulled += 1
                     await asyncio.sleep(5)
             except Exception as e:
                 print(f"[Scraper] שגיאה: {e}")
                 continue
+
         next_btn = _find_next_page(bot_msg.reply_markup, page)
-        if not next_btn: break
-        await bot_msg.click(next_btn.callback_data)
+        if not next_btn:
+            break
+        await bot_msg.click(_get_btn_data(next_btn))
         await asyncio.sleep(3)
         page += 1
+
     return pulled
 
 async def _save_and_forward(client, video_msg):
@@ -142,16 +160,31 @@ async def _save_and_forward(client, video_msg):
     if res == "saved":
         await forward_file_to_channel(client, db, file_data)
 
+def _get_btn_data(btn):
+    """מחזיר callback_data או טקסט של כפתור."""
+    if hasattr(btn, 'callback_data') and btn.callback_data:
+        return btn.callback_data
+    if hasattr(btn, 'text') and btn.text:
+        return btn.text
+    return None
+
 def _extract_buttons(reply_markup):
     buttons = []
-    if not reply_markup or not hasattr(reply_markup, 'inline_keyboard'): return buttons
-    for row in reply_markup.inline_keyboard:
-        for btn in row:
-            buttons.append(btn)
+    if not reply_markup:
+        return buttons
+    if hasattr(reply_markup, 'inline_keyboard'):
+        for row in reply_markup.inline_keyboard:
+            for btn in row:
+                buttons.append(btn)
+    elif hasattr(reply_markup, 'keyboard'):
+        for row in reply_markup.keyboard:
+            for btn in row:
+                buttons.append(btn)
     return buttons
 
 def _find_next_page(reply_markup, current_page):
     for btn in _extract_buttons(reply_markup):
-        if btn.callback_data and f"#{current_page+1}" in btn.callback_data:
+        data = _get_btn_data(btn)
+        if data and f"#{current_page+1}" in data:
             return btn
     return None
