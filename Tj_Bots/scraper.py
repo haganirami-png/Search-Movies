@@ -1,4 +1,4 @@
-import asyncio, os, tempfile
+import asyncio, os, tempfile, traceback
 from pyrogram import Client, filters, enums
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from config import ADMINS, LOG_CHANNEL
@@ -84,6 +84,7 @@ async def run_scraper(client, status_msg):
         except Exception as e:
             SCRAPE_STATUS["failed"] += 1
             print(f"[Scraper] שגיאה ב-{title}: {e}")
+            traceback.print_exc()
         await asyncio.sleep(30)
     SCRAPE_STATUS["running"] = False
     SCRAPE_STATUS["current"] = ""
@@ -105,9 +106,15 @@ async def scrape_title(client, userbot, title):
                 break
 
         if not bot_msg or not bot_msg.reply_markup:
+            print(f"[Scraper] אין reply_markup עבור {title}")
             break
 
+        print(f"[Scraper] reply_markup type: {type(bot_msg.reply_markup)}")
+        print(f"[Scraper] reply_markup: {bot_msg.reply_markup}")
+
         buttons = _extract_buttons(bot_msg.reply_markup)
+        print(f"[Scraper] נמצאו {len(buttons)} כפתורים")
+
         if not buttons:
             break
 
@@ -118,8 +125,8 @@ async def scrape_title(client, userbot, title):
             if btn_data in ("noop",) or btn_data.startswith("search#"):
                 continue
             try:
-                # לחץ על הכפתור עם quote=True לכפתורי reply keyboard
                 btn_text = btn.text if hasattr(btn, 'text') and btn.text else btn_data
+                print(f"[Scraper] לוחץ על: {btn_text}")
                 await bot_msg.click(btn_text, quote=True)
                 await asyncio.sleep(3)
 
@@ -130,11 +137,15 @@ async def scrape_title(client, userbot, title):
                         break
 
                 if video_msg:
+                    print(f"[Scraper] נמצא וידאו!")
                     await _save_and_forward(client, video_msg)
                     pulled += 1
                     await asyncio.sleep(5)
+                else:
+                    print(f"[Scraper] לא נמצא וידאו")
             except Exception as e:
-                print(f"[Scraper] שגיאה: {e}")
+                print(f"[Scraper] שגיאה בכפתור: {e}")
+                traceback.print_exc()
                 continue
 
         next_btn = _find_next_page(bot_msg.reply_markup, page)
