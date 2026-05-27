@@ -110,7 +110,6 @@ async def scrape_title(client, userbot, title):
             break
 
         print(f"[Scraper] reply_markup type: {type(bot_msg.reply_markup)}")
-        print(f"[Scraper] reply_markup: {bot_msg.reply_markup}")
 
         buttons = _extract_buttons(bot_msg.reply_markup)
         print(f"[Scraper] נמצאו {len(buttons)} כפתורים")
@@ -126,8 +125,9 @@ async def scrape_title(client, userbot, title):
                 continue
             try:
                 btn_text = btn.text if hasattr(btn, 'text') and btn.text else btn_data
-                print(f"[Scraper] לוחץ על: {btn_text}")
-                await bot_msg.click(btn_text, quote=True)
+                print(f"[Scraper] שולח: {btn_text[:30]}")
+                # שלח את הטקסט של הכפתור כהודעה רגילה
+                await userbot.send_message(SOURCE_BOT, btn_text)
                 await asyncio.sleep(3)
 
                 video_msg = None
@@ -142,7 +142,7 @@ async def scrape_title(client, userbot, title):
                     pulled += 1
                     await asyncio.sleep(5)
                 else:
-                    print(f"[Scraper] לא נמצא וידאו")
+                    print(f"[Scraper] לא נמצא וידאו אחרי שליחת: {btn_text[:30]}")
             except Exception as e:
                 print(f"[Scraper] שגיאה בכפתור: {e}")
                 traceback.print_exc()
@@ -152,7 +152,7 @@ async def scrape_title(client, userbot, title):
         if not next_btn:
             break
         next_text = next_btn.text if hasattr(next_btn, 'text') and next_btn.text else _get_btn_data(next_btn)
-        await bot_msg.click(next_text, quote=True)
+        await userbot.send_message(SOURCE_BOT, next_text)
         await asyncio.sleep(3)
         page += 1
 
@@ -201,4 +201,4 @@ def _find_next_page(reply_markup, current_page):
         if data and f"#{current_page+1}" in data:
             return btn
     return None
-    
+
