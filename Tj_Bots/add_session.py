@@ -1,5 +1,5 @@
 import asyncio
-from pyrogram import Client, filters
+from pyrogram import Client, filters, enums
 from pyrogram.types import Message
 from pyrogram.errors import SessionPasswordNeeded, PhoneCodeInvalid, PhoneCodeExpired
 from config import ADMINS, API_ID, API_HASH
@@ -12,7 +12,7 @@ pending_sessions = {}
 async def add_session_cmd(client, message: Message):
     await message.reply(
         "📱 <b>הוספת סשן חדש</b>\n\nשלח את מספר הטלפון בפורמט:\n<code>+972501234567</code>",
-        parse_mode="html",
+        parse_mode=enums.ParseMode.HTML,
         quote=True
     )
     pending_sessions[message.from_user.id] = {'step': 'phone'}
@@ -64,7 +64,6 @@ async def session_conversation(client, message: Message):
             me = await temp_client.get_me()
             await temp_client.disconnect()
 
-            # הוסף כסשן פעיל
             new_client = Client(
                 name=f"userbot_{phone.replace('+','')}",
                 api_id=API_ID,
@@ -82,7 +81,7 @@ async def session_conversation(client, message: Message):
                 f"👤 שם: {me.first_name}\n"
                 f"📞 טלפון: {phone}\n"
                 f"📡 סשנים פעילים: {len(active_userbots)}",
-                parse_mode="html"
+                parse_mode=enums.ParseMode.HTML
             )
 
         except SessionPasswordNeeded:
@@ -127,7 +126,7 @@ async def session_conversation(client, message: Message):
                 f"👤 שם: {me.first_name}\n"
                 f"📞 טלפון: {phone}\n"
                 f"📡 סשנים פעילים: {len(active_userbots)}",
-                parse_mode="html"
+                parse_mode=enums.ParseMode.HTML
             )
 
         except Exception as e:
