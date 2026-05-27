@@ -30,26 +30,35 @@ class ChannelDB:
         self._bot = bot
         me = await bot.get_me()
         self._prefix = me.username
-        self._channel_id = await self._get_or_create_db_channel()
-        await self._load_all()
-
-    async def _get_or_create_db_channel(self):
         if os.path.exists(DB_CHANNEL_ID_FILE):
             with open(DB_CHANNEL_ID_FILE) as f:
-                return int(f.read().strip())
+                self._channel_id = int(f.read().strip())
+            await self._load_all()
+        print("[ChannelDB] ✅ מוכן")
+
+    async def ensure_db_channel(self):
+        if self._channel_id:
+            return True
         from session_manager import active_userbots
         if not active_userbots:
-            raise Exception("אין סשנים")
+            return False
         userbot = active_userbots[0]
-        channel = await userbot.create_channel(title=DB_CHANNEL_TITLE)
-        channel_id = channel.id
-        me = await self._bot.get_me()
-        await userbot.promote_chat_member(chat_id=channel_id, user_id=me.username, privileges={"can_post_messages":True,"can_edit_messages":True,"can_delete_messages":True,"can_invite_users":True,"can_change_info":True})
-        with open(DB_CHANNEL_ID_FILE, 'w') as f:
-            f.write(str(channel_id))
-        return channel_id
+        try:
+            channel = await userbot.create_channel(title=DB_CHANNEL_TITLE)
+            channel_id = channel.id
+            me = await self._bot.get_me()
+            await userbot.promote_chat_member(chat_id=channel_id, user_id=me.username, privileges={"can_post_messages":True,"can_edit_messages":True,"can_delete_messages":True,"can_invite_users":True,"can_change_info":True})
+            with open(DB_CHANNEL_ID_FILE, 'w') as f:
+                f.write(str(channel_id))
+            self._channel_id = channel_id
+            print(f"[ChannelDB] ✅ ערוץ DB נוצר: {channel_id}")
+            return True
+        except Exception as e:
+            print(f"[ChannelDB] שגיאה: {e}")
+            return False
 
     async def _load_all(self):
+        if not self._channel_id: return
         async for msg in self._bot.get_chat_history(self._channel_id):
             if not msg.text: continue
             text = msg.text
@@ -78,6 +87,7 @@ class ChannelDB:
             except: continue
 
     async def _save(self, tag, data, msg_id_attr):
+        if not self._channel_id: return
         text = f"#{tag}\n{json.dumps(data, ensure_ascii=False)}"
         msg_id = getattr(self, msg_id_attr)
         try:
