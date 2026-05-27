@@ -118,8 +118,8 @@ async def scrape_title(client, userbot, title):
             if btn_data in ("noop",) or btn_data.startswith("search#"):
                 continue
             try:
-                # שלח את הטקסט של הכפתור כהודעה
-                await userbot.send_message(SOURCE_BOT, btn_data)
+                # לחץ על הכפתור inline
+                await bot_msg.click(btn_data)
                 await asyncio.sleep(3)
 
                 video_msg = None
@@ -139,7 +139,7 @@ async def scrape_title(client, userbot, title):
         next_btn = _find_next_page(bot_msg.reply_markup, page)
         if not next_btn:
             break
-        await userbot.send_message(SOURCE_BOT, _get_btn_data(next_btn))
+        await bot_msg.click(_get_btn_data(next_btn))
         await asyncio.sleep(3)
         page += 1
 
