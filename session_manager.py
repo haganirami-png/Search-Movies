@@ -38,10 +38,15 @@ def _is_rate_limited(phone):
 
 async def load_session_from_json(json_data):
     session_str = json_data.get("session_str")
-    app_id = json_data.get("app_id")
-    app_hash = json_data.get("app_hash")
     phone = str(json_data.get("phone", "unknown"))
-    if not session_str or not app_id or not app_hash: return None
+
+    if not session_str:
+        return None
+
+    # השתמש ב-app_id/hash מה-JSON, אחרת ברירת מחדל
+    app_id = json_data.get("app_id") or 2040
+    app_hash = json_data.get("app_hash") or "b18441a1ff607e10a989891a5462e627"
+
     for ub in active_userbots:
         if ub.name == f"userbot_{phone}": return None
     try:
