@@ -29,7 +29,12 @@ async def add_session_cmd(client, message: Message):
     )
     pending_sessions[user_id] = {'step': 'phone'}
 
-@Client.on_message(filters.private & filters.user(ADMINS) & filters.text & ~filters.command([]))
+@Client.on_message(
+    filters.private & filters.user(ADMINS) & filters.text &
+    ~filters.command(["add", "addlist", "cancel", "addsession", "sessions", "stats",
+                      "start", "stopscrape", "scrapestatus", "listchannels", "index",
+                      "newindex", "broadcast", "restart", "clean", "ban", "unban"])
+)
 async def session_conversation(client, message: Message):
     user_id = message.from_user.id
     if user_id not in pending_sessions:
@@ -77,10 +82,10 @@ async def session_conversation(client, message: Message):
         except SessionPasswordNeeded:
             state['step'] = 'password'
             pending_sessions[user_id] = state
-            await status.edit("🔐 החשבון מוגן בסיסמה דו-שלבית.\n\nשלח את הסיסמה:\nלביטול: /cancel")
+            await status.edit("🔐 החשבון מוגן בסיסמה.\n\nשלח את הסיסמה:\nלביטול: /cancel")
         except (PhoneCodeInvalid, PhoneCodeExpired):
             del pending_sessions[user_id]
-            await status.edit("❌ קוד שגוי או פג תוקף. נסה שוב עם /addsession")
+            await status.edit("❌ קוד שגוי. נסה שוב עם /addsession")
         except Exception as e:
             del pending_sessions[user_id]
             await status.edit(f"❌ שגיאה: {e}")
