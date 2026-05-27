@@ -2,6 +2,7 @@ import os, tempfile
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from config import ADMINS
+from database import db
 from session_manager import load_sessions_from_zip, active_userbots, health_check, remove_session_by_phone, _get_daily_count, _is_rate_limited, DAILY_LIMIT
 
 def sessions_keyboard():
@@ -27,6 +28,8 @@ async def handle_sessions_zip(client, message: Message):
         if count == 0:
             await status.edit("❌ לא נמצאו סשנים תקינים.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ סגור", callback_data="sess_close")]]))
         else:
+            # צור ערוץ DB אם לא קיים
+            await db.ensure_db_channel()
             await status.edit(f"✅ <b>{count} סשנים נטענו!</b>\n📡 סה'כ פעילים: <code>{len(active_userbots)}</code>", reply_markup=sessions_keyboard(), parse_mode="html")
     except Exception as e:
         await status.edit(f"❌ שגיאה: {e}")
@@ -54,7 +57,7 @@ async def sessions_callback(client, query: CallbackQuery):
     elif action == "sess_health":
         await query.answer("בודק...")
         result = await health_check()
-        text = f"❤️ <b>בריאות</b>\n\n✅ פעילים: <code>{len(result['alive'])}</code>\n❌ הוסרו: <code>{result['dead_count']}</code>\n\n"
+        text = f"❤ <b>בריאות</b>\n\n✅ פעילים: <code>{len(result['alive'])}</code>\n❌ הוסרו: <code>{result['dead_count']}</code>\n\n"
         for s in result['alive']:
             text += f"• {s['name']} | {'⛔' if s['limited'] else '✅'} | {s['today']}/{DAILY_LIMIT}\n"
         await query.message.edit(text, reply_markup=sessions_keyboard(), parse_mode="html")
@@ -69,5 +72,5 @@ async def sessions_callback(client, query: CallbackQuery):
     elif action.startswith("sess_kick_"):
         phone = action.replace("sess_kick_","")
         removed = await remove_session_by_phone(phone)
-        await query.answer(f"✅ הוסר" if removed else "לא נמצא", show_alert=True)
+        await query.answer("✅ הוסר" if removed else "לא נמצא", show_alert=True)
         await query.message.edit(f"📡 <b>ניהול סשנים</b>\n\nפעילים: <code>{len(active_userbots)}</code>", reply_markup=sessions_keyboard(), parse_mode="html")
