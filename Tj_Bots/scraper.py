@@ -188,3 +188,4 @@ def _find_next_page(reply_markup, current_page):
         if data and f"#{current_page+1}" in data:
             return btn
     return None
+
